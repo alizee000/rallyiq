@@ -11,10 +11,10 @@ export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?
   const navigate = useNavigate();
   
   const [matchType, setMatchType] = useState<MatchType>('singles');
-  const [playerA1, setPlayerA1] = useState('Player 1');
-  const [playerA2, setPlayerA2] = useState('Player 2');
-  const [playerB1, setPlayerB1] = useState('Player 3');
-  const [playerB2, setPlayerB2] = useState('Player 4');
+  const [playerA1, setPlayerA1] = useState('');
+  const [playerA2, setPlayerA2] = useState('');
+  const [playerB1, setPlayerB1] = useState('');
+  const [playerB2, setPlayerB2] = useState('');
   const [stage, setStage] = useState('League Match');
 
   const stages = ['League Match', 'Round 2', 'Round 3', 'Quarter Final', 'Semi Final', 'Final'];
@@ -31,15 +31,15 @@ export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?
     const teamA: Team = {
       id: 'teamA',
       players: matchType === 'singles' 
-        ? [{ id: uuidv4(), name: playerA1 }]
-        : [{ id: uuidv4(), name: playerA1 }, { id: uuidv4(), name: playerA2 }]
+        ? [{ id: uuidv4(), name: playerA1.trim() || 'Player 1' }]
+        : [{ id: uuidv4(), name: playerA1.trim() || 'Player 1' }, { id: uuidv4(), name: playerA2.trim() || 'Player 2' }]
     };
     
     const teamB: Team = {
       id: 'teamB',
       players: matchType === 'singles' 
-        ? [{ id: uuidv4(), name: playerB1 }]
-        : [{ id: uuidv4(), name: playerB1 }, { id: uuidv4(), name: playerB2 }]
+        ? [{ id: uuidv4(), name: playerB1.trim() || 'Player 3' }]
+        : [{ id: uuidv4(), name: playerB1.trim() || 'Player 3' }, { id: uuidv4(), name: playerB2.trim() || 'Player 4' }]
     };
     
     const match = createInitialMatchState(uuidv4(), teamA, teamB, settings, 'A');
