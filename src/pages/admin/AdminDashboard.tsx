@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, Plus, Play, MoreHorizontal } from 'lucide-react';
+import { Trophy, Plus, Play, Trash2 } from 'lucide-react';
 import { useMatchStore } from '../../store/matchStore';
 import { supabase } from '../../lib/supabase';
+import ConfirmModal from '../../components/layout/ConfirmModal';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { tournaments, matches, activeMatch } = useMatchStore();
+  const { tournaments, matches, activeMatch, deleteTournament, deleteMatch } = useMatchStore();
   const matchesList = Object.values(matches);
   const tournamentsList = Object.values(tournaments);
+  
+  const [confirmState, setConfirmState] = useState<{isOpen: boolean, type: 'match' | 'tournament', id: string, name?: string}>({ isOpen: false, type: 'match', id: '' });
 
   return (
     <div className="flex flex-col h-full bg-transparent overflow-y-auto pb-24">
@@ -61,12 +64,23 @@ export default function AdminDashboard() {
                     </div>
                     <div className="text-xs text-graphite-400">Game {m.currentGame} • {m.currentScoreA} - {m.currentScoreB}</div>
                   </div>
-                  <button 
-                    onClick={() => navigate(`/admin/match/${m.id}/score`)}
-                    className="p-3 bg-graphite-800 rounded-xl text-graphite-100 hover:bg-graphite-700 active:scale-95 transition-all"
-                  >
-                    <Play size={18} fill="currentColor" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmState({ isOpen: true, type: 'match', id: m.id });
+                      }}
+                      className="p-3 bg-coral-DEFAULT/10 rounded-xl text-coral-DEFAULT hover:bg-coral-DEFAULT/20 active:scale-95 transition-all"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                    <button 
+                      onClick={() => navigate(`/admin/match/${m.id}/score`)}
+                      className="p-3 bg-graphite-800 rounded-xl text-graphite-100 hover:bg-graphite-700 active:scale-95 transition-all"
+                    >
+                      <Play size={18} fill="currentColor" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -92,8 +106,14 @@ export default function AdminDashboard() {
                     <div className="text-sm font-bold text-graphite-100 mb-1">{t.name}</div>
                     <div className="text-xs text-graphite-400 uppercase">{t.status}</div>
                   </div>
-                  <button className="p-2 text-graphite-400 hover:text-graphite-100">
-                    <MoreHorizontal size={20} />
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConfirmState({ isOpen: true, type: 'tournament', id: t.id, name: t.name });
+                    }}
+                    className="p-2 text-graphite-400 hover:text-coral-DEFAULT transition-colors"
+                  >
+                    <Trash2 size={20} />
                   </button>
                 </div>
               ))}
@@ -101,6 +121,20 @@ export default function AdminDashboard() {
           )}
         </section>
       </div>
+      
+      <ConfirmModal 
+        isOpen={confirmState.isOpen}
+        title={confirmState.type === 'tournament' ? 'Delete Tournament' : 'Delete Match'}
+        message={confirmState.type === 'tournament' ? `Are you sure you want to delete "${confirmState.name}"? This will also permanently delete all matches associated with it.` : 'Are you sure you want to permanently delete this match?'}
+        onCancel={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={() => {
+          if (confirmState.type === 'tournament') {
+            deleteTournament(confirmState.id);
+          } else {
+            deleteMatch(confirmState.id);
+          }
+        }}
+      />
     </div>
   );
 }

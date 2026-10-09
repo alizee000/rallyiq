@@ -23,6 +23,8 @@ interface AppStore {
   createTournament: (t: Tournament) => void;
   createProfile: (p: PlayerProfile) => void;
   scheduleMatch: (m: MatchState) => void;
+  deleteMatch: (id: string) => void;
+  deleteTournament: (id: string) => void;
 }
 
 // Helper to push to supabase without awaiting
@@ -171,5 +173,30 @@ export const useMatchStore = create<AppStore>()((set, get) => ({
       };
     });
     if (syncedMatch) syncMatch(syncedMatch);
+  },
+
+  deleteMatch: (id: string) => {
+    set((state) => {
+      const newMatches = { ...state.matches };
+      delete newMatches[id];
+      return { matches: newMatches, activeMatch: state.activeMatch?.id === id ? null : state.activeMatch };
+    });
+    supabase.from('iqrally_matches').delete().eq('id', id).then();
+  },
+
+  deleteTournament: (id: string) => {
+    set((state) => {
+      const newTournaments = { ...state.tournaments };
+      delete newTournaments[id];
+      const newMatches = { ...state.matches };
+      Object.keys(newMatches).forEach(matchId => {
+        if (newMatches[matchId].tournamentId === id) {
+          delete newMatches[matchId];
+        }
+      });
+      return { tournaments: newTournaments, matches: newMatches };
+    });
+    supabase.from('iqrally_tournaments').delete().eq('id', id).then();
+    supabase.from('iqrally_matches').delete().eq('tournament_id', id).then();
   }
 }));

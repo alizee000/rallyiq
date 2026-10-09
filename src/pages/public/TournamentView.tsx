@@ -67,7 +67,10 @@ export default function TournamentView() {
                   <div className="absolute inset-0 bg-gradient-to-r from-lime-DEFAULT/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   
                   <div className="flex justify-between items-center mb-4 relative z-10">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-lime-DEFAULT bg-lime-DEFAULT/10 px-2 py-0.5 rounded-sm">Game {m.currentGame}</span>
+                    <div className="flex gap-2">
+                      {m.stage && <span className="text-[10px] font-bold uppercase tracking-widest text-graphite-500 bg-black/5 px-2 py-0.5 rounded-sm">{m.stage}</span>}
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-lime-DEFAULT bg-lime-DEFAULT/10 px-2 py-0.5 rounded-sm">Game {m.currentGame}</span>
+                    </div>
                     <Play size={16} className="text-lime-DEFAULT opacity-50 group-hover:opacity-100 transition-opacity" />
                   </div>
                   
@@ -81,7 +84,14 @@ export default function TournamentView() {
                       </div>
                     </div>
                     
-                    <div className="w-full h-px bg-black/5"></div>
+                    <div className="relative py-2 flex items-center justify-center">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full h-px bg-black/5"></div>
+                      </div>
+                      <div className="relative bg-white/40 px-2 rounded-full text-[10px] font-bold text-graphite-400 uppercase tracking-widest backdrop-blur-sm">
+                        VS
+                      </div>
+                    </div>
                     
                     <div className="flex justify-between items-center">
                       <div className="font-bold text-graphite-100 text-sm truncate pr-4">
@@ -102,8 +112,9 @@ export default function TournamentView() {
           <section>
             <h2 className="text-sm font-bold text-graphite-400 uppercase tracking-widest mb-4">Upcoming Matches</h2>
             <div className="space-y-3">
-              {scheduled.map(m => (
-                <div key={m.id} className="glass-card p-5 rounded-3xl  opacity-80">
+              {scheduled.map((m, index) => (
+                <div key={m.id} className={`glass-card p-5 rounded-3xl opacity-80 ${index % 2 === 0 ? '!bg-white/80' : '!bg-black/5 shadow-inner'}`}>
+                  {m.stage && <div className="text-[10px] font-bold uppercase tracking-widest text-graphite-500 mb-2">{m.stage}</div>}
                   <div className="text-sm font-bold text-graphite-100 mb-2">
                     {m.teamA.players.map(p => p.name).join(' & ')}
                   </div>
@@ -121,7 +132,7 @@ export default function TournamentView() {
           <section>
             <h2 className="text-sm font-bold text-graphite-400 uppercase tracking-widest mb-4">Results</h2>
             <div className="space-y-3">
-              {completed.map(m => {
+              {completed.map((m, index) => {
                 const winnerIsA = m.games.filter(g => g.winner === 'A').length > m.games.filter(g => g.winner === 'B').length;
                 const scoreString = m.games.length > 0 
                   ? m.games.map(g => `${g.scoreA}-${g.scoreB}`).join(', ') 
@@ -131,13 +142,21 @@ export default function TournamentView() {
                   <div 
                     key={m.id} 
                     onClick={() => navigate(`/live/${m.id}`)}
-                    className="glass-card p-4 rounded-[20px] cursor-pointer hover:bg-black/5 transition-all active:scale-[0.98] "
+                    className={`glass-card p-4 rounded-[20px] cursor-pointer hover:scale-[0.98] transition-all ${index % 2 === 0 ? '!bg-white/80' : '!bg-black/5 shadow-inner'}`}
                   >
                     <div className="flex justify-between items-center mb-1.5">
                       <div className={`text-sm font-bold truncate pr-2 ${winnerIsA ? 'text-graphite-100' : 'text-graphite-400'}`}>
                         {m.teamA.players.map(p => p.name).join(' & ')} {winnerIsA && '🏆'}
                       </div>
+                      {m.stage && <div className="text-[10px] font-bold uppercase tracking-widest text-graphite-400">{m.stage}</div>}
                     </div>
+                    
+                    <div className="relative py-1 flex items-center justify-start ml-2 mb-1.5">
+                      <div className="text-[10px] font-bold text-graphite-400/80 uppercase tracking-widest">
+                        VS
+                      </div>
+                    </div>
+
                     <div className="flex justify-between items-center">
                       <div className={`text-sm font-bold truncate pr-2 ${!winnerIsA ? 'text-graphite-100' : 'text-graphite-400'}`}>
                         {m.teamB.players.map(p => p.name).join(' & ')} {!winnerIsA && '🏆'}

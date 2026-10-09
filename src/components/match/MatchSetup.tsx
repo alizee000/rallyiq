@@ -15,6 +15,9 @@ export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?
   const [playerA2, setPlayerA2] = useState('Player 2');
   const [playerB1, setPlayerB1] = useState('Player 3');
   const [playerB2, setPlayerB2] = useState('Player 4');
+  const [stage, setStage] = useState('League Match');
+
+  const stages = ['League Match', 'Round 2', 'Round 3', 'Quarter Final', 'Semi Final', 'Final'];
   
   const handleStart = () => {
     const settings: MatchSettings = {
@@ -40,6 +43,9 @@ export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?
     };
     
     const match = createInitialMatchState(uuidv4(), teamA, teamB, settings, 'A');
+    if (tournamentId) {
+      match.stage = stage;
+    }
     
     if (tournamentId) {
       match.tournamentId = tournamentId;
@@ -58,7 +64,7 @@ export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?
         {tournamentId ? 'Schedule Match' : 'Match Setup'}
       </h1>
       
-      <div className="flex bg-black/5 rounded-xl p-1 mb-8 shadow-inner">
+      <div className="flex bg-black/5 rounded-xl p-1 mb-6 shadow-inner">
         <button
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-all duration-300 ${matchType === 'singles' ? 'bg-white text-lime-DEFAULT font-bold shadow-sm' : 'text-graphite-500 hover:text-graphite-700'}`}
           onClick={() => setMatchType('singles')}
@@ -72,6 +78,19 @@ export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?
           <Users size={18} /> Doubles
         </button>
       </div>
+
+      {tournamentId && (
+        <div className="mb-8">
+          <label className="text-xs text-graphite-400 font-bold mb-2 uppercase tracking-widest pl-2 block">Match Stage</label>
+          <select 
+            className="neo-input w-full rounded-xl p-4 text-graphite-100 transition-all font-bold appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
+            value={stage}
+            onChange={(e) => setStage(e.target.value)}
+          >
+            {stages.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+      )}
       
       <div className="space-y-6 flex-1">
         {/* Team A */}

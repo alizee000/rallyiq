@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useMatchStore } from '../../store/matchStore';
-import { ChevronLeft, Plus, Play } from 'lucide-react';
+import { ChevronLeft, Plus, Play, Trash2 } from 'lucide-react';
+import ConfirmModal from '../../components/layout/ConfirmModal';
 
 export default function AdminTournamentView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { tournaments, matches } = useMatchStore();
+  const { tournaments, matches, deleteMatch } = useMatchStore();
+  
+  const [confirmMatchId, setConfirmMatchId] = useState<string | null>(null);
   
   const tournament = id ? tournaments[id] : null;
   
@@ -58,14 +61,28 @@ export default function AdminTournamentView() {
                     <div className="text-sm font-bold text-graphite-100 mb-1">
                       {m.teamA.players.map(p => p.name).join(' & ')} vs {m.teamB.players.map(p => p.name).join(' & ')}
                     </div>
-                    <div className="text-xs text-graphite-400">Game {m.currentGame} • {m.currentScoreA} - {m.currentScoreB}</div>
+                    <div className="text-xs text-graphite-400">
+                      {m.stage && <span className="font-bold text-graphite-500 mr-2 uppercase tracking-wide">{m.stage} •</span>}
+                      Game {m.currentGame} • {m.currentScoreA} - {m.currentScoreB}
+                    </div>
                   </div>
-                  <button 
-                    onClick={() => navigate(`/admin/match/${m.id}/score`)}
-                    className="neo-btn p-3 !bg-red-500 rounded-[16px] text-white"
-                  >
-                    <Play size={18} fill="currentColor" />
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmMatchId(m.id);
+                      }}
+                      className="p-3 bg-coral-DEFAULT/10 rounded-xl text-coral-DEFAULT hover:bg-coral-DEFAULT/20 active:scale-95 transition-all"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                    <button 
+                      onClick={() => navigate(`/admin/match/${m.id}/score`)}
+                      className="neo-btn p-3 !bg-red-500 rounded-[16px] text-white"
+                    >
+                      <Play size={18} fill="currentColor" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -82,14 +99,28 @@ export default function AdminTournamentView() {
                     <div className="text-sm font-bold text-graphite-100 mb-1">
                       {m.teamA.players.map(p => p.name).join(' & ')} vs {m.teamB.players.map(p => p.name).join(' & ')}
                     </div>
-                    <div className="text-xs text-graphite-400">Scheduled</div>
+                    <div className="text-xs text-graphite-400">
+                      {m.stage && <span className="font-bold text-graphite-500 mr-2 uppercase tracking-wide">{m.stage} •</span>}
+                      Scheduled
+                    </div>
                   </div>
-                  <button 
-                    onClick={() => navigate(`/admin/match/${m.id}/score`)}
-                    className="neo-btn px-5 py-2 !bg-cyan-DEFAULT text-white font-bold rounded-full text-sm"
-                  >
-                    Start
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmMatchId(m.id);
+                      }}
+                      className="p-3 bg-coral-DEFAULT/10 rounded-xl text-coral-DEFAULT hover:bg-coral-DEFAULT/20 active:scale-95 transition-all"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                    <button 
+                      onClick={() => navigate(`/admin/match/${m.id}/score`)}
+                      className="neo-btn px-5 py-2 !bg-cyan-DEFAULT text-white font-bold rounded-full text-sm"
+                    >
+                      Start
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -115,10 +146,24 @@ export default function AdminTournamentView() {
                       <div className="text-sm font-bold text-graphite-100 mb-1">
                         {m.teamA.players.map(p => p.name).join(' & ')} vs {m.teamB.players.map(p => p.name).join(' & ')}
                       </div>
-                      <div className="text-xs text-graphite-400 font-bold tracking-wider">{scoreString}</div>
+                      <div className="text-xs text-graphite-400 font-bold tracking-wider">
+                        {m.stage && <span className="text-graphite-500 mr-2 uppercase">{m.stage} •</span>}
+                        {scoreString}
+                      </div>
                     </div>
-                  <div className="text-[10px] font-bold text-lime-DEFAULT uppercase tracking-widest">
-                    Analysis
+                  <div className="flex items-center gap-4">
+                    <div className="text-[10px] font-bold text-lime-DEFAULT uppercase tracking-widest">
+                      Analysis
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setConfirmMatchId(m.id);
+                      }}
+                      className="p-2 text-graphite-400 hover:text-coral-DEFAULT transition-colors"
+                    >
+                      <Trash2 size={18} />
+                    </button>
                   </div>
                   </div>
                 );
@@ -127,6 +172,18 @@ export default function AdminTournamentView() {
           </section>
         )}
       </div>
+      
+      <ConfirmModal 
+        isOpen={!!confirmMatchId}
+        title="Delete Match"
+        message="Are you sure you want to permanently delete this match?"
+        onCancel={() => setConfirmMatchId(null)}
+        onConfirm={() => {
+          if (confirmMatchId) {
+            deleteMatch(confirmMatchId);
+          }
+        }}
+      />
     </div>
   );
 }

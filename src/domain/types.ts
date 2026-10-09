@@ -63,6 +63,7 @@ export type Tournament = {
 export type MatchState = {
   id: string;
   tournamentId?: string;
+  stage?: string; // League, Quarter Final, Semi Final, Final, etc.
   status: MatchStatus;
   settings: MatchSettings;
   teamA: Team;
