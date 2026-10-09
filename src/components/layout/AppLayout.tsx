@@ -20,7 +20,7 @@ export default function AppLayout() {
   ];
 
   return (
-    <div className="flex flex-col h-screen max-w-[430px] mx-auto bg-transparent overflow-hidden relative shadow-2xl">
+    <div className="flex flex-col h-[100dvh] max-w-[430px] mx-auto bg-transparent overflow-hidden relative shadow-2xl">
       <main className="flex-1 overflow-y-auto overflow-x-hidden">
         <Outlet />
       </main>
