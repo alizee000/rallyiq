@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trophy, Plus, Play, MoreHorizontal } from 'lucide-react';
 import { useMatchStore } from '../../store/matchStore';
+import { supabase } from '../../lib/supabase';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -11,9 +12,19 @@ export default function AdminDashboard() {
 
   return (
     <div className="flex flex-col h-full bg-transparent overflow-y-auto pb-24">
-      <header className="px-6 pt-12 pb-6 border-b border-white/60 bg-white/60 backdrop-blur-3xl sticky top-0 z-20 shadow-[0_10px_30px_rgba(0,0,0,0.02)]">
-        <h1 className="text-2xl font-display font-bold text-graphite-100 mb-2">Admin Dashboard</h1>
-        <p className="text-sm text-graphite-400">Manage tournaments and score matches live.</p>
+      <header className="px-6 pt-12 pb-6 border-b border-white/60 bg-white/60 backdrop-blur-3xl sticky top-0 z-20 shadow-[0_10px_30px_rgba(0,0,0,0.02)] flex justify-between items-start">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-graphite-100 mb-2">Admin Dashboard</h1>
+          <p className="text-sm text-graphite-400">Manage tournaments and score matches live.</p>
+        </div>
+        <button 
+          onClick={() => {
+            supabase.auth.signOut();
+          }}
+          className="text-xs font-bold text-coral-DEFAULT px-3 py-1.5 bg-coral-DEFAULT/10 rounded-full hover:bg-coral-DEFAULT/20 transition-colors"
+        >
+          Sign Out
+        </button>
       </header>
 
       <div className="p-6 space-y-8">
