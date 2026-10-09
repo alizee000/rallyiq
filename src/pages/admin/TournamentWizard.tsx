@@ -17,7 +17,7 @@ export default function TournamentWizard() {
       id: uuidv4(),
       name,
       startDate: new Date().toISOString(),
-      status: 'upcoming' as const
+      status: 'ongoing' as const
     };
     
     createTournament(newTournament);
