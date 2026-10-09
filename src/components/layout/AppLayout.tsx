@@ -1,12 +1,16 @@
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
-import { Home, Activity, Trophy, PieChart, User } from 'lucide-react';
+import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Activity, Trophy, LogOut } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useAuthStore } from '../../store/authStore';
 
 export default function AppLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isPublicLiveViewer = location.pathname.startsWith('/live/');
   const isAdminScoring = location.pathname.includes('/score');
   
+  const { session, signOut } = useAuthStore();
+
   // Hide bottom nav if we are in an active match to maximize space
   const showBottomNav = !isPublicLiveViewer && !isAdminScoring;
 
@@ -44,6 +48,21 @@ export default function AppLayout() {
                 </li>
               );
             })}
+            
+            {session && (
+              <li className="flex-1">
+                <button 
+                  onClick={async () => {
+                    await signOut();
+                    navigate('/');
+                  }}
+                  className="w-full flex flex-col items-center gap-1 p-2 text-graphite-400 hover:text-coral-DEFAULT transition-colors"
+                >
+                  <LogOut size={24} strokeWidth={2} />
+                  <span className="text-[10px] font-medium tracking-wide">Sign Out</span>
+                </button>
+              </li>
+            )}
           </ul>
         </nav>
       )}

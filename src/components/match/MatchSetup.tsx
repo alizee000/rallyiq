@@ -58,15 +58,15 @@ export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?
         {tournamentId ? 'Schedule Match' : 'Match Setup'}
       </h1>
       
-      <div className="flex glass-card rounded-xl p-1 mb-8 shadow-lg">
+      <div className="flex bg-black/5 rounded-xl p-1 mb-8 shadow-inner">
         <button
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-all duration-300 ${matchType === 'singles' ? 'bg-graphite-700/80 text-lime-DEFAULT font-bold shadow-md' : 'text-graphite-400 hover:text-graphite-100'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-all duration-300 ${matchType === 'singles' ? 'bg-white text-lime-DEFAULT font-bold shadow-sm' : 'text-graphite-500 hover:text-graphite-700'}`}
           onClick={() => setMatchType('singles')}
         >
           <User size={18} /> Singles
         </button>
         <button
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-all duration-300 ${matchType === 'doubles' ? 'bg-graphite-700/80 text-cyan-DEFAULT font-bold shadow-md' : 'text-graphite-400 hover:text-graphite-100'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg transition-all duration-300 ${matchType === 'doubles' ? 'bg-white text-cyan-DEFAULT font-bold shadow-sm' : 'text-graphite-500 hover:text-graphite-700'}`}
           onClick={() => setMatchType('doubles')}
         >
           <Users size={18} /> Doubles
