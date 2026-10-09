@@ -16,14 +16,23 @@ export const generateCommentary = (event: PointEvent, match: MatchState): string
   const scoringTeam = isA ? match.teamA : match.teamB;
   const losingTeam = isA ? match.teamB : match.teamA;
   
-  const winner = scoringTeam.players.map(p => p.name).join(' & ');
-  const loser = losingTeam.players.map(p => p.name).join(' & ');
-  
-  const scoreA = event.previousStateSnapshot.currentScoreA;
-  const scoreB = event.previousStateSnapshot.currentScoreB;
-  
   const { details } = event;
-  let text = `Point to ${winner}.`;
+  
+  let winner = scoringTeam.players.map(p => p.name).join(' & ');
+  let loser = losingTeam.players.map(p => p.name).join(' & ');
+  let teamWinner = winner; // Keep full team name for fallback/Game Point
+
+  if (details?.pointWinnerId) {
+    const specificWinner = scoringTeam.players.find(p => p.id === details.pointWinnerId);
+    if (specificWinner) winner = specificWinner.name;
+  }
+  
+  if (details?.errorMakerId) {
+    const specificLoser = losingTeam.players.find(p => p.id === details.errorMakerId);
+    if (specificLoser) loser = specificLoser.name;
+  }
+  
+  let text = `Point to ${teamWinner}.`;
   
   if (details) {
     const shot = details.shotType && details.shotType !== 'N/A (Unforced)' ? details.shotType.toLowerCase() : '';
@@ -116,6 +125,8 @@ export const generateCommentary = (event: PointEvent, match: MatchState): string
   }
 
   // Add game point / match point context dynamically
+  const scoreA = event.previousStateSnapshot.currentScoreA;
+  const scoreB = event.previousStateSnapshot.currentScoreB;
   const nextScoreA = isA ? scoreA + 1 : scoreA;
   const nextScoreB = isA ? scoreB : scoreB + 1;
   const { pointsToWin, winByTwo, capAt } = match.settings;
@@ -129,10 +140,10 @@ export const generateCommentary = (event: PointEvent, match: MatchState): string
   if ((isA && isGamePoint(nextScoreA, nextScoreB)) || (!isA && isGamePoint(nextScoreB, nextScoreA))) {
     const gpTemplates = [
       ` And with that, it's Game Point!`,
-      ` Crucial moment now... Game Point for ${winner}.`,
+      ` Crucial moment now... Game Point for ${teamWinner}.`,
       ` They are one point away from taking the game!`,
       ` Pressure is mounting. Game Point!`,
-      ` The finish line is in sight for ${winner}. Game Point.`
+      ` The finish line is in sight for ${teamWinner}. Game Point.`
     ];
     text += pickRandom(gpTemplates, event.id + 'gp');
   }
