@@ -28,9 +28,15 @@ export default function TournamentView() {
     <div className="flex flex-col h-full bg-transparent overflow-y-auto pb-24 relative">
       <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-cyan-DEFAULT/10 to-transparent -z-10"></div>
       
-      <header className="px-4 py-4 flex items-center relative z-20">
-        <button onClick={() => navigate('/')} className="p-2 -ml-2 text-graphite-400 hover:text-graphite-100">
+      <header className="px-4 py-4 flex items-center justify-between relative z-20">
+        <button onClick={() => navigate('/')} className="p-2 -ml-2 text-graphite-400 hover:text-graphite-100 active:scale-95 transition-transform">
           <ChevronLeft size={24} />
+        </button>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="p-2 -mr-2 text-graphite-400 hover:text-lime-DEFAULT active:scale-95 transition-transform"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         </button>
       </header>
 

@@ -27,8 +27,16 @@ export default function Home() {
             </h1>
             <p className="text-graphite-400 text-sm font-medium mt-1 tracking-wide uppercase">Premium Court Analytics</p>
           </div>
-          <div className="w-12 h-12 rounded-full bg-graphite-900  flex items-center justify-center shadow-lg">
-            <Trophy className="text-lime-DEFAULT" size={20} />
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => window.location.reload()} 
+              className="w-12 h-12 rounded-full glass-card flex items-center justify-center shadow-sm text-graphite-400 hover:text-lime-DEFAULT transition-colors active:scale-95"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+            <div className="w-12 h-12 rounded-full bg-graphite-900  flex items-center justify-center shadow-lg">
+              <Trophy className="text-lime-DEFAULT" size={20} />
+            </div>
           </div>
         </div>
 
