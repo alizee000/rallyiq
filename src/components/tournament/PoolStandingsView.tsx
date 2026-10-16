@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MatchState } from '../../domain/types';
 import { calculatePoolStandings } from '../../domain/tournamentEngine';
-import { Trophy, ChevronRight, Award, Edit3 } from 'lucide-react';
+import { Trophy, ChevronRight, Award, Edit3, Users } from 'lucide-react';
 
 interface PoolStandingsViewProps {
   matches: MatchState[];
@@ -10,6 +10,8 @@ interface PoolStandingsViewProps {
   onAdvanceToKnockouts?: () => void;
   onCreatePool?: () => void;
   onEditPool?: (poolName: string, category?: string) => void;
+  onViewPlayers?: () => void;
+  playerCount?: number;
 }
 
 export default function PoolStandingsView({
@@ -19,6 +21,8 @@ export default function PoolStandingsView({
   onAdvanceToKnockouts,
   onCreatePool,
   onEditPool,
+  onViewPlayers,
+  playerCount,
 }: PoolStandingsViewProps) {
   // Extract all distinct (poolName, category) pairs from matches
   const uniquePoolMap = new Map<string, { key: string; name: string; category: string }>();
@@ -70,16 +74,29 @@ export default function PoolStandingsView({
       <div className="glass-card p-8 rounded-3xl text-center flex flex-col items-center">
         <Trophy className="text-graphite-600 mb-3" size={36} />
         <h3 className="text-lg font-bold text-graphite-100 mb-1">No Pools Created Yet</h3>
-        <p className="text-sm text-graphite-400 mb-6 max-w-xs">
+        <p className="text-sm text-graphite-300 mb-6 max-w-xs font-medium">
           Organize teams into round-robin pools (e.g. Pool A for Women's Doubles) and automatically calculate live standings.
         </p>
-        {isAdmin && onCreatePool && (
-          <button
-            onClick={onCreatePool}
-            className="neo-btn !bg-lime-DEFAULT text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-md"
-          >
-            Create First Pool
-          </button>
+        {isAdmin && (
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {onViewPlayers && (
+              <button
+                onClick={onViewPlayers}
+                className="neo-btn bg-white/70 hover:bg-white text-graphite-100 px-5 py-3 rounded-2xl font-bold text-sm shadow-sm flex items-center gap-1.5"
+              >
+                <Users size={16} />
+                <span>View Players List {playerCount ? `(${playerCount})` : ''}</span>
+              </button>
+            )}
+            {onCreatePool && (
+              <button
+                onClick={onCreatePool}
+                className="neo-btn !bg-lime-DEFAULT text-white px-6 py-3 rounded-2xl font-bold text-sm shadow-md"
+              >
+                Create First Pool
+              </button>
+            )}
+          </div>
         )}
       </div>
     );

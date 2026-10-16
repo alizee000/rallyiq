@@ -380,6 +380,8 @@ export default function AdminTournamentView() {
               onAdvanceToKnockouts={() => setIsAdvanceModalOpen(true)}
               onCreatePool={() => setIsPoolModalOpen(true)}
               onEditPool={(poolName, category) => setEditingPool({ name: poolName, category })}
+              onViewPlayers={() => setActiveTab('players')}
+              playerCount={tournament.players?.length || 0}
             />
           </div>
         )}
