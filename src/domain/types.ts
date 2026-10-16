@@ -53,17 +53,53 @@ export type PlayerProfile = {
   matchesWon: number;
 };
 
+export type TournamentPlayer = {
+  id: string;
+  name: string;
+  avatarUrl?: string;
+  playoId?: string;
+  guestCount?: number;
+  isHost?: boolean;
+  pool?: string;
+  category?: string;
+};
+
 export type Tournament = {
   id: string;
   name: string;
   startDate: string;
   status: 'upcoming' | 'ongoing' | 'completed';
+  playoUrl?: string;
+  playoInfo?: {
+    venue?: string;
+    date?: string;
+    hostName?: string;
+    hostAvatar?: string;
+    totalJoined?: number;
+  };
+  players?: TournamentPlayer[];
 };
+
+export const TOURNAMENT_CATEGORIES = [
+  "Men's Singles",
+  "Women's Singles",
+  "Men's Doubles",
+  "Women's Doubles",
+  "Mixed Doubles",
+] as const;
+
+export type TournamentCategory = (typeof TOURNAMENT_CATEGORIES)[number] | string;
 
 export type MatchState = {
   id: string;
   tournamentId?: string;
-  stage?: string; // League, Quarter Final, Semi Final, Final, etc.
+  category?: TournamentCategory; // e.g. "Women's Doubles", "Men's Singles"
+  stage?: string; // League Match, Round 2, Round 3, Quarter Final, Semi Final, Final, etc.
+  pool?: string; // 'Pool A', 'Pool B', etc.
+  knockoutRound?: 'quarter' | 'semi' | 'final';
+  knockoutMatchNumber?: number;
+  knockoutNextMatchId?: string;
+  knockoutSlot?: 'A' | 'B';
   status: MatchStatus;
   settings: MatchSettings;
   teamA: Team;
@@ -83,4 +119,20 @@ export type MatchState = {
   receiverB?: string; 
   
   history: PointEvent[]; 
+};
+
+export type PoolStanding = {
+  team: Team;
+  teamName: string;
+  played: number;
+  won: number;
+  lost: number;
+  gamesWon: number;
+  gamesLost: number;
+  gameDiff: number;
+  pointsWon: number;
+  pointsLost: number;
+  pointDiff: number;
+  points: number; // 2 pts per win
+  rank: number;
 };

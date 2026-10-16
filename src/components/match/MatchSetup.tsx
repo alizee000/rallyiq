@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useNavigate } from 'react-router-dom';
-import { MatchSettings, MatchType, Side, Team } from '../../domain/types';
+import { MatchSettings, MatchType, Side, Team, TOURNAMENT_CATEGORIES } from '../../domain/types';
 import { createInitialMatchState } from '../../domain/scoring';
 import { useMatchStore } from '../../store/matchStore';
-import { Users, User, Play, Calendar } from 'lucide-react';
+import { Users, User, Play, Calendar, Tag } from 'lucide-react';
 
 export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?: string, onComplete?: () => void }) {
   const { startMatch, scheduleMatch } = useMatchStore();
@@ -16,6 +16,20 @@ export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?
   const [playerB1, setPlayerB1] = useState('');
   const [playerB2, setPlayerB2] = useState('');
   const [stage, setStage] = useState('League Match');
+  const [category, setCategory] = useState<string>('');
+  const [customCategory, setCustomCategory] = useState('');
+  const [pool, setPool] = useState('');
+  const [customPool, setCustomPool] = useState('');
+
+  const { matches: allMatches } = useMatchStore();
+  const existingPools = Array.from(
+    new Set(
+      Object.values(allMatches)
+        .filter(m => m.tournamentId === tournamentId)
+        .map(m => m.pool)
+        .filter(Boolean)
+    )
+  ) as string[];
 
   const stages = ['League Match', 'Round 2', 'Round 3', 'Quarter Final', 'Semi Final', 'Final'];
   
@@ -45,6 +59,14 @@ export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?
     const match = createInitialMatchState(uuidv4(), teamA, teamB, settings, 'A');
     if (tournamentId) {
       match.stage = stage;
+      const assignedCategory = category === '__custom__' ? customCategory.trim() : category.trim();
+      if (assignedCategory) {
+        match.category = assignedCategory;
+      }
+      const assignedPool = pool === '__custom__' ? customPool.trim() : pool.trim();
+      if (assignedPool) {
+        match.pool = assignedPool;
+      }
     }
     
     if (tournamentId) {
@@ -80,15 +102,81 @@ export default function MatchSetup({ tournamentId, onComplete }: { tournamentId?
       </div>
 
       {tournamentId && (
-        <div className="mb-8">
-          <label className="text-xs text-graphite-400 font-bold mb-2 uppercase tracking-widest pl-2 block">Match Stage</label>
-          <select 
-            className="neo-input w-full rounded-xl p-4 text-graphite-100 transition-all font-bold appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
-            value={stage}
-            onChange={(e) => setStage(e.target.value)}
-          >
-            {stages.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+        <div className="space-y-4 mb-8">
+          <div>
+            <label className="text-xs text-graphite-400 font-bold mb-2 uppercase tracking-widest pl-2 block flex items-center gap-1.5">
+              <Tag size={13} className="text-lime-DEFAULT" /> Event Category
+            </label>
+            <select
+              className="neo-input w-full rounded-xl p-3.5 text-graphite-100 transition-all font-bold appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
+              value={category}
+              onChange={(e) => {
+                const val = e.target.value;
+                setCategory(val);
+                if (val === "Men's Singles" || val === "Women's Singles") {
+                  setMatchType('singles');
+                } else if (val === "Women's Doubles" || val === "Men's Doubles" || val === "Mixed Doubles") {
+                  setMatchType('doubles');
+                }
+              }}
+            >
+              <option value="">General / None</option>
+              {TOURNAMENT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              <option value="__custom__">+ Custom Category...</option>
+            </select>
+
+            {category === '__custom__' && (
+              <input
+                type="text"
+                placeholder="e.g. Under-17 Boys Singles"
+                value={customCategory}
+                onChange={e => setCustomCategory(e.target.value)}
+                className="neo-input w-full rounded-xl p-3 mt-2 text-xs text-graphite-100 font-bold"
+                autoFocus
+              />
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-graphite-400 font-bold mb-2 uppercase tracking-widest pl-2 block">Match Stage</label>
+              <select 
+                className="neo-input w-full rounded-xl p-3.5 text-graphite-100 transition-all font-bold appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
+                value={stage}
+                onChange={(e) => setStage(e.target.value)}
+              >
+                {stages.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-xs text-graphite-400 font-bold mb-2 uppercase tracking-widest pl-2 block">Pool / Group (Optional)</label>
+              <select 
+                className="neo-input w-full rounded-xl p-3.5 text-graphite-100 transition-all font-bold appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717a%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-no-repeat bg-[position:calc(100%-1rem)_center]"
+                value={pool}
+                onChange={(e) => setPool(e.target.value)}
+              >
+                <option value="">None (General / Knockout)</option>
+                {existingPools.map(p => <option key={p} value={p}>{p}</option>)}
+                {!existingPools.includes('Pool A') && <option value="Pool A">Pool A</option>}
+                {!existingPools.includes('Pool B') && <option value="Pool B">Pool B</option>}
+                {!existingPools.includes('Pool C') && <option value="Pool C">Pool C</option>}
+                {!existingPools.includes('Pool D') && <option value="Pool D">Pool D</option>}
+                <option value="__custom__">+ Enter Custom Pool Name</option>
+              </select>
+
+              {pool === '__custom__' && (
+                <input
+                  type="text"
+                  placeholder="Enter pool name (e.g. Group 1)"
+                  value={customPool}
+                  onChange={e => setCustomPool(e.target.value)}
+                  className="neo-input w-full rounded-xl p-3 mt-2 text-xs text-graphite-100 font-bold"
+                  autoFocus
+                />
+              )}
+            </div>
+          </div>
         </div>
       )}
       

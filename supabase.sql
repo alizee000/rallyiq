@@ -4,7 +4,10 @@ CREATE TABLE public.iqrally_tournaments (
     name TEXT NOT NULL,
     start_date TIMESTAMPTZ NOT NULL,
     status TEXT NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    players JSONB DEFAULT '[]'::jsonb,
+    playo_info JSONB DEFAULT '{}'::jsonb,
+    playo_url TEXT
 );
 
 -- Create profiles table
