@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Users, Search, Plus, Trash2, MapPin, Sparkles, RefreshCw, UserCheck, Trophy } from 'lucide-react';
 import { Tournament, MatchState, TournamentPlayer } from '../../domain/types';
 import PlayoImportModal from './PlayoImportModal';
+import PlayerAvatar from '../common/PlayerAvatar';
 import { v4 as uuidv4 } from 'uuid';
 
 interface TournamentPlayersViewProps {
@@ -28,7 +29,27 @@ export default function TournamentPlayersView({
   const [manualName, setManualName] = useState('');
   const [isAddingManual, setIsAddingManual] = useState(false);
 
-  const players = tournament.players || [];
+  // 1. Explicit registered players
+  const explicitPlayers = tournament.players || [];
+
+  // 2. Fallback / supplement: extract from matches if matches exist
+  const playerMap = new Map<string, TournamentPlayer>();
+  explicitPlayers.forEach(p => {
+    if (p && p.name) playerMap.set(p.name.trim().toLowerCase(), p);
+  });
+
+  matches.forEach(m => {
+    [...(m.teamA?.players || []), ...(m.teamB?.players || [])].forEach(p => {
+      if (p && p.name && !playerMap.has(p.name.trim().toLowerCase())) {
+        playerMap.set(p.name.trim().toLowerCase(), {
+          id: p.id || p.name,
+          name: p.name,
+        });
+      }
+    });
+  });
+
+  const players = Array.from(playerMap.values());
 
   // Build a lookup of player -> pool assignments based on existing matches
   const playerPoolMap: Record<string, string> = {};
@@ -193,12 +214,14 @@ export default function TournamentPlayersView({
             No Players in Tournament Yet
           </h3>
           <p className="text-xs text-graphite-400 max-w-sm mb-6 leading-relaxed">
-            Import participants directly from your Playo activity link to list them under this tournament and easily seed them into pools.
+            {isAdmin
+              ? 'Import participants directly from your Playo activity link to list them under this tournament and easily seed them into pools.'
+              : 'The tournament organizer has not registered players yet. Check back soon for the updated roster and schedule.'}
           </p>
           {isAdmin && (
             <button
               onClick={() => setIsImportModalOpen(true)}
-              className="px-5 py-2.5 bg-graphite-900 text-white rounded-2xl text-xs font-bold hover:bg-black transition-all flex items-center gap-2 shadow-md"
+              className="px-5 py-2.5 bg-black hover:bg-graphite-100 text-white rounded-2xl text-xs font-bold transition-all flex items-center gap-2 shadow-md"
             >
               <Sparkles size={15} className="text-lime-DEFAULT" />
               Import from Playo
@@ -227,17 +250,7 @@ export default function TournamentPlayersView({
                   </span>
 
                   {/* Avatar */}
-                  {player.avatarUrl ? (
-                    <img
-                      src={player.avatarUrl}
-                      alt={player.name}
-                      className="w-8 h-8 rounded-full object-cover shrink-0 border border-white shadow-sm"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-lime-DEFAULT/30 to-cyan-DEFAULT/30 text-graphite-100 font-black text-xs flex items-center justify-center shrink-0 border border-white shadow-sm">
-                      {player.name.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <PlayerAvatar name={player.name} avatarUrl={player.avatarUrl} />
 
                   {/* Name & Details */}
                   <div className="truncate flex-1">

@@ -11,7 +11,7 @@ export default function TournamentView() {
   const navigate = useNavigate();
   const { tournaments, matches } = useMatchStore();
   
-  const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'bracket' | 'players'>('matches');
+  const [activeTab, setActiveTab] = useState<'matches' | 'standings' | 'bracket' | 'players'>('standings');
 
   const tournament = id ? tournaments[id] : null;
   
@@ -25,6 +25,15 @@ export default function TournamentView() {
   }
 
   const tournamentMatches = Object.values(matches).filter(m => m.tournamentId === id);
+
+  // Collect all unique players across tournament.players and matches
+  const matchPlayerNames = new Set<string>();
+  tournamentMatches.forEach(m => {
+    [...(m.teamA?.players || []), ...(m.teamB?.players || [])].forEach(p => {
+      if (p?.name) matchPlayerNames.add(p.name.trim().toLowerCase());
+    });
+  });
+  const totalPlayerCount = Math.max(tournament.players?.length || 0, matchPlayerNames.size);
 
   const matchCategories = Array.from(
     new Set(tournamentMatches.map(m => m.category?.trim()).filter(Boolean))
@@ -144,11 +153,11 @@ export default function TournamentView() {
           >
             <Users size={13} className="shrink-0" />
             <span className="whitespace-nowrap">Players</span>
-            {tournament.players && tournament.players.length > 0 && (
+            {totalPlayerCount > 0 && (
               <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-md shrink-0 ${
                 activeTab === 'players' ? 'bg-black/5 text-graphite-100' : 'text-graphite-300'
               }`}>
-                {tournament.players.length}
+                {totalPlayerCount}
               </span>
             )}
           </button>

@@ -15,6 +15,7 @@ import {
 import { useMatchStore } from '../../store/matchStore';
 import ConfirmModal from '../../components/layout/ConfirmModal';
 import PlayoImportModal from '../../components/tournament/PlayoImportModal';
+import PlayerAvatar from '../../components/common/PlayerAvatar';
 import { TournamentPlayer } from '../../domain/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -52,15 +53,34 @@ export default function AdminDashboard() {
     name?: string;
   }>({ isOpen: false, type: 'match', id: '' });
 
-  // Collect all players across all tournaments
-  const allTournamentPlayers = tournamentsList.flatMap(t =>
-    (t.players || []).map(p => ({
+  // Collect all players across all tournaments (including any from matches as fallback)
+  const allTournamentPlayers = tournamentsList.flatMap(t => {
+    const explicitPlayers = t.players || [];
+    const playerMap = new Map<string, any>();
+    explicitPlayers.forEach(p => {
+      if (p && p.name) playerMap.set(p.name.trim().toLowerCase(), p);
+    });
+
+    Object.values(matches)
+      .filter(m => m.tournamentId === t.id)
+      .forEach(m => {
+        [...(m.teamA?.players || []), ...(m.teamB?.players || [])].forEach(p => {
+          if (p && p.name && !playerMap.has(p.name.trim().toLowerCase())) {
+            playerMap.set(p.name.trim().toLowerCase(), {
+              id: p.id || p.name,
+              name: p.name,
+            });
+          }
+        });
+      });
+
+    return Array.from(playerMap.values()).map(p => ({
       ...p,
       tournamentId: t.id,
       tournamentName: t.name,
       playoUrl: t.playoUrl,
-    }))
-  );
+    }));
+  });
 
   const filteredPlayers = allTournamentPlayers.filter(p => {
     const matchesTourney =
@@ -521,17 +541,7 @@ export default function AdminDashboard() {
                       </span>
 
                       {/* Avatar */}
-                      {player.avatarUrl ? (
-                        <img
-                          src={player.avatarUrl}
-                          alt={player.name}
-                          className="w-8 h-8 rounded-full object-cover shrink-0 border border-white shadow-sm"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-lime-DEFAULT/30 to-cyan-DEFAULT/30 text-graphite-100 font-black text-xs flex items-center justify-center shrink-0 border border-white shadow-sm">
-                          {player.name.charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      <PlayerAvatar name={player.name} avatarUrl={player.avatarUrl} />
 
                       {/* Name & Details */}
                       <div className="truncate flex-1">

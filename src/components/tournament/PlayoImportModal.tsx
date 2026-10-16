@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Link2, FileText, Check, Loader2, Users, MapPin, Calendar, UserCheck, Search, Sparkles } from 'lucide-react';
 import { TournamentPlayer } from '../../domain/types';
 import { fetchPlayoActivity, parseRawPlayerText, expandPlayoPlayers, PlayoFetchResult } from '../../services/playoService';
+import PlayerAvatar from '../common/PlayerAvatar';
 
 interface PlayoImportModalProps {
   isOpen: boolean;
@@ -315,17 +316,7 @@ export default function PlayoImportModal({
                           {isSelected && <Check size={12} strokeWidth={3} />}
                         </div>
 
-                        {p.avatarUrl ? (
-                          <img
-                            src={p.avatarUrl}
-                            alt={p.name}
-                            className="w-7 h-7 rounded-full object-cover shrink-0 border border-white"
-                          />
-                        ) : (
-                          <div className="w-7 h-7 rounded-full bg-graphite-200 flex items-center justify-center text-[10px] font-bold text-graphite-600 shrink-0">
-                            {p.name.charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                        <PlayerAvatar name={p.name} avatarUrl={p.avatarUrl} size="w-7 h-7" textSize="text-[10px]" />
 
                         <div className="truncate">
                           <p className="text-xs font-bold text-graphite-100 truncate">

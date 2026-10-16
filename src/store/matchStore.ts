@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { v4 as uuidv4 } from 'uuid';
 import { MatchState, Side, PointEventDetails, Tournament, PlayerProfile, TournamentPlayer } from '../domain/types';
 import { addPoint, undoLastPoint } from '../domain/scoring';
 import { advanceKnockoutWinner } from '../domain/tournamentEngine';
@@ -40,51 +41,67 @@ interface AppStore {
   deleteTournament: (id: string) => void;
 }
 
-// Helper to push to supabase and localStorage
-const syncTournament = async (t: Tournament) => {
-  // Always cache locally so data is immediate and persists offline
+// Helper to push roster, players, and Playo metadata to Supabase and localStorage
+const syncTournamentRoster = async (
+  tournamentId: string,
+  players: TournamentPlayer[],
+  playoInfo?: any,
+  playoUrl?: string
+) => {
+  // 1. Cache locally for immediate offline access
   try {
     localStorage.setItem(
-      `iqrally_tournament_roster_${t.id}`,
+      `iqrally_tournament_roster_${tournamentId}`,
       JSON.stringify({
-        players: t.players || [],
-        playoInfo: t.playoInfo,
-        playoUrl: t.playoUrl,
+        players,
+        playoInfo,
+        playoUrl,
       })
     );
   } catch (err) {
-    console.error('Failed to cache tournament in localStorage', err);
+    console.error('Failed to cache roster in localStorage', err);
   }
 
-  // Attempt to sync full payload including players if table has columns
-  const fullPayload: any = {
-    id: t.id,
-    name: t.name,
-    start_date: t.startDate,
-    status: t.status,
-  };
-  if (t.players !== undefined) fullPayload.players = t.players;
-  if (t.playoInfo !== undefined) fullPayload.playo_info = t.playoInfo;
-  if (t.playoUrl !== undefined) fullPayload.playo_url = t.playoUrl;
-
-  const { error } = await supabase.from('iqrally_tournaments').upsert(fullPayload);
-  if (error) {
-    // If schema cache indicates columns don't exist yet, retry with base columns
-    if (error.code === 'PGRST204' || error.message?.includes('column')) {
-      supabase
-        .from('iqrally_tournaments')
-        .upsert({
-          id: t.id,
-          name: t.name,
-          start_date: t.startDate,
-          status: t.status,
-        })
-        .then(({ error: retryErr }: { error: any }) => {
-          if (retryErr) console.error('Supabase base sync error:', retryErr);
-        });
-    } else {
-      console.error('Supabase sync error:', error);
+  // 2. Persist to Supabase in iqrally_matches table as a dedicated meta_roster row
+  try {
+    const { error } = await supabase.from('iqrally_matches').upsert({
+      id: tournamentId,
+      tournament_id: tournamentId,
+      status: 'meta_roster',
+      state: {
+        type: 'tournament_roster',
+        tournamentId,
+        players,
+        playoInfo,
+        playoUrl,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+    if (error) {
+      console.error('Supabase meta_roster sync error:', error);
     }
+  } catch (err) {
+    console.error('Failed to persist roster to Supabase:', err);
+  }
+};
+
+// Helper to push tournament record to supabase and localStorage
+const syncTournament = async (t: Tournament) => {
+  try {
+    const { error } = await supabase.from('iqrally_tournaments').upsert({
+      id: t.id,
+      name: t.name,
+      start_date: t.startDate,
+      status: t.status,
+    });
+    if (error) console.error('Supabase tournament base sync error:', error);
+  } catch (err) {
+    console.error('Failed to sync tournament to Supabase', err);
+  }
+
+  // Also sync roster if players or Playo info are present
+  if (t.players !== undefined || t.playoInfo !== undefined || t.playoUrl !== undefined) {
+    await syncTournamentRoster(t.id, t.players || [], t.playoInfo, t.playoUrl);
   }
 };
 
@@ -112,6 +129,25 @@ export const useMatchStore = create<AppStore>()((set, get) => ({
       ]);
       
       const loadedTournaments: Record<string, Tournament> = {};
+      const rosterMap: Record<string, { players?: TournamentPlayer[]; playoInfo?: any; playoUrl?: string }> = {};
+      const loadedMatches: Record<string, MatchState> = {};
+
+      if (matchesRes.data) {
+        matchesRes.data.forEach((m: any) => {
+          if (m.status === 'meta_roster' || m.state?.type === 'tournament_roster') {
+            const rosterState = m.state || {};
+            const tourneyId = m.tournament_id || rosterState.tournamentId || m.id;
+            rosterMap[tourneyId] = {
+              players: rosterState.players || [],
+              playoInfo: rosterState.playoInfo,
+              playoUrl: rosterState.playoUrl,
+            };
+          } else if (m.state) {
+            loadedMatches[m.id] = m.state as MatchState;
+          }
+        });
+      }
+
       if (tournamentsRes.data) {
         tournamentsRes.data.forEach((t: any) => {
           let cachedRoster: any = null;
@@ -122,24 +158,59 @@ export const useMatchStore = create<AppStore>()((set, get) => ({
             console.error('Failed to parse cached roster', e);
           }
 
+          const remoteRoster = rosterMap[t.id];
+
+          // Priority: remote meta_roster from Supabase > local storage cache > table columns > empty
+          const players: TournamentPlayer[] =
+            (remoteRoster?.players && remoteRoster.players.length > 0)
+              ? remoteRoster.players
+              : (cachedRoster?.players && cachedRoster.players.length > 0)
+              ? cachedRoster.players
+              : (t.players || []);
+
+          const playoUrl =
+            remoteRoster?.playoUrl || cachedRoster?.playoUrl || t.playo_url;
+          const playoInfo =
+            remoteRoster?.playoInfo || cachedRoster?.playoInfo || t.playo_info;
+
           loadedTournaments[t.id] = {
             id: t.id,
             name: t.name,
             startDate: t.start_date,
             status: t.status,
-            playoUrl: t.playo_url || cachedRoster?.playoUrl,
-            playoInfo: t.playo_info || cachedRoster?.playoInfo,
-            players: t.players || cachedRoster?.players || [],
+            playoUrl,
+            playoInfo,
+            players,
           };
         });
       }
 
-      const loadedMatches: Record<string, MatchState> = {};
-      if (matchesRes.data) {
-        matchesRes.data.forEach((m: any) => {
-          loadedMatches[m.id] = m.state as MatchState;
-        });
-      }
+      // Merge any players that exist in tournament matches into tournament.players
+      Object.values(loadedTournaments).forEach(tourney => {
+        const existingNames = new Set((tourney.players || []).map(p => p.name.trim().toLowerCase()));
+        let newlyAdded = 0;
+
+        Object.values(loadedMatches)
+          .filter(m => m.tournamentId === tourney.id)
+          .forEach(m => {
+            [...(m.teamA?.players || []), ...(m.teamB?.players || [])].forEach(p => {
+              if (p && p.name && !existingNames.has(p.name.trim().toLowerCase())) {
+                existingNames.add(p.name.trim().toLowerCase());
+                if (!tourney.players) tourney.players = [];
+                tourney.players.push({
+                  id: p.id || uuidv4(),
+                  name: p.name.trim(),
+                });
+                newlyAdded++;
+              }
+            });
+          });
+
+        // If Supabase didn't have meta_roster yet or players were extracted, persist to Supabase
+        if ((!rosterMap[tourney.id] && tourney.players && tourney.players.length > 0) || newlyAdded > 0) {
+          syncTournamentRoster(tourney.id, tourney.players || [], tourney.playoInfo, tourney.playoUrl);
+        }
+      });
 
       set({ tournaments: loadedTournaments, matches: loadedMatches, isLoading: false });
     } catch (err) {
@@ -241,7 +312,33 @@ export const useMatchStore = create<AppStore>()((set, get) => ({
       updates[m.id] = m;
       syncMatch(m);
     });
-    set(state => ({ matches: { ...state.matches, ...updates } }));
+    set(state => {
+      const updatedTournaments = { ...state.tournaments };
+      newMatches.forEach(m => {
+        if (m.tournamentId && updatedTournaments[m.tournamentId]) {
+          const tourney = { ...updatedTournaments[m.tournamentId] };
+          const existingNames = new Set((tourney.players || []).map(p => p.name.trim().toLowerCase()));
+          const newPlayers = [...(tourney.players || [])];
+          let changed = false;
+          [...(m.teamA?.players || []), ...(m.teamB?.players || [])].forEach(p => {
+            if (p && p.name && !existingNames.has(p.name.trim().toLowerCase())) {
+              existingNames.add(p.name.trim().toLowerCase());
+              newPlayers.push({ id: p.id || uuidv4(), name: p.name.trim() });
+              changed = true;
+            }
+          });
+          if (changed) {
+            tourney.players = newPlayers;
+            updatedTournaments[m.tournamentId] = tourney;
+            syncTournamentRoster(tourney.id, newPlayers, tourney.playoInfo, tourney.playoUrl);
+          }
+        }
+      });
+      return {
+        matches: { ...state.matches, ...updates },
+        tournaments: updatedTournaments,
+      };
+    });
   },
 
   startMatch: (match: MatchState) => {
@@ -402,6 +499,11 @@ export const useMatchStore = create<AppStore>()((set, get) => ({
       });
       return { tournaments: newTournaments, matches: newMatches };
     });
+    try {
+      localStorage.removeItem(`iqrally_tournament_roster_${id}`);
+    } catch (e) {
+      console.error(e);
+    }
     supabase.from('iqrally_tournaments').delete().eq('id', id).then();
     supabase.from('iqrally_matches').delete().eq('tournament_id', id).then();
   }
